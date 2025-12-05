@@ -7,22 +7,9 @@ const cors = require('cors')
 
 var app = express();
 
-// Configure CORS to allow local dev and hosted frontend
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5000',
-  process.env.FRONTEND_URL,
-  process.env.FRONTEND_URL?.replace('https://', 'http://')
-].filter(Boolean);
-
+// Configure CORS to allow all origins
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow same-origin or no-origin (e.g., curl/postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
