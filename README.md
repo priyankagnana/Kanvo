@@ -16,8 +16,8 @@ Kanvo is a full-stack Kanban platform to organize projects, sections, and tasks 
 - [License & Links](#-license--links)
 
 ## 🚀 Live Demo
-- Frontend (Vercel): https://capstone-ap.vercel.app/
-- Backend (Render): https://capstoneap.onrender.com
+- Frontend (Vercel): https://kanvo-nu.vercel.app/
+- Backend (Render): https://kanvo.onrender.com/
 
 ## 🔍 Problem Statement
 Managing many projects and tasks across tools is messy. Kanvo unifies Kanban boards, search/sort/filter/pagination, and favorites so teams can find and organize work quickly and consistently.
@@ -78,7 +78,7 @@ Prereqs: Node.js, MongoDB, npm/yarn
 
 Clone:
 ```bash
-git clone https://github.com/Champion1102/Kanvo.git
+git clone https://github.com/priyankagnana/Kanvo.git
 cd Kanvo
 ```
 
@@ -133,7 +133,7 @@ Kanvo/
   - Using bcryptjs avoids native build issues on Node/Render.
 
 ## 📄 License & Links
-- GitHub: https://github.com/Champion1102/Kanvo
-- Live App: https://capstone-ap.vercel.app/
-- Backend (Render): https://capstoneap.onrender.com
+- GitHub: https://github.com/priyankagnana/Kanvo
+- Live App: https://kanvo-nu.vercel.app/
+- Backend (Render): https://kanvo.onrender.com/
 - License: MIT
