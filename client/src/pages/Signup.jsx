@@ -34,7 +34,7 @@ const Signup = () => {
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email address'
 
     if (!username) newErrors.username = 'Please fill this field'
-    if(username.length < 8) newErrors.username ='Username must be at least 8 characters'
+    else if(username.length > 10) newErrors.username ='Username must be at most 10 characters'
     if (!password) newErrors.password = 'Please fill this field'
     if(password.length < 8) newErrors.password = 'Password must be at least 8 characters'
     else if (!/\d/.test(password)) newErrors.password = 'Password must contain at least one number';

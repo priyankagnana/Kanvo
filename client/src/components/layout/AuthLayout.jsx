@@ -39,7 +39,7 @@ const AuthLayout = () => {
             userSelect: 'none'
           }}
         >
-          Productio
+          Kanvo
         </Box>
         <Outlet />
       </Box>

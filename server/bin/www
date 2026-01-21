@@ -34,8 +34,8 @@ var server = http.createServer(app);
 if (!process.env.MONGODB_URL) {
   console.error('\n❌ ERROR: MONGODB_URL is not set in .env file');
   console.error('Please create a .env file in the server directory with:');
-  console.error('MONGODB_URL=mongodb://localhost:27017/productio');
-  console.error('Or use MongoDB Atlas: MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/productio\n');
+  console.error('MONGODB_URL=mongodb://localhost:27017/kanvo');
+  console.error('Or use MongoDB Atlas: MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/kanvo\n');
   process.exit(1);
 }
 

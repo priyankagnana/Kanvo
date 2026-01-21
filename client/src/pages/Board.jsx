@@ -215,7 +215,7 @@ const Board = () => {
             letterSpacing={1}
             sx={{ userSelect: 'none' }}
           >
-            Productio
+            Kanvo
           </Typography>
 
         <IconButton variant='outlined' color='error' onClick={deleteBoard}>

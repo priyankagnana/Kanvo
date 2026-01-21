@@ -1,6 +1,6 @@
-# Productio – Smart Kanban Project Management App 🎯
+# Kanvo – Smart Kanban Project Management App 🎯
 
-Productio is a full-stack Kanban platform to organize projects, sections, and tasks with drag-and-drop, advanced search, sorting, filtering, pagination, favorites, and theming.
+Kanvo is a full-stack Kanban platform to organize projects, sections, and tasks with drag-and-drop, advanced search, sorting, filtering, pagination, favorites, and theming.
 
 ## 📌 Table of Contents
 - [Live Demo](#-live-demo)
@@ -20,7 +20,7 @@ Productio is a full-stack Kanban platform to organize projects, sections, and ta
 - Backend (Render): https://capstoneap.onrender.com
 
 ## 🔍 Problem Statement
-Managing many projects and tasks across tools is messy. Productio unifies Kanban boards, search/sort/filter/pagination, and favorites so teams can find and organize work quickly and consistently.
+Managing many projects and tasks across tools is messy. Kanvo unifies Kanban boards, search/sort/filter/pagination, and favorites so teams can find and organize work quickly and consistently.
 
 ## 🏗 System Architecture
 - Frontend: React + Material UI + Redux + drag-and-drop (@hello-pangea/dnd)
@@ -78,8 +78,8 @@ Prereqs: Node.js, MongoDB, npm/yarn
 
 Clone:
 ```bash
-git clone https://github.com/Champion1102/Productio.git
-cd Productio
+git clone https://github.com/Champion1102/Kanvo.git
+cd Kanvo
 ```
 
 Frontend:
@@ -115,7 +115,7 @@ REACT_APP_API_URL=<your_backend_base>/api/v1/
 
 ## 🗂 Project Structure
 ```
-Productio/
+Kanvo/
 ├── client/        # React frontend
 ├── server/        # Node/Express backend
 │   ├── bin/www    # Server entrypoint (port binding, Mongo connect)
@@ -133,7 +133,7 @@ Productio/
   - Using bcryptjs avoids native build issues on Node/Render.
 
 ## 📄 License & Links
-- GitHub: https://github.com/Champion1102/Productio
+- GitHub: https://github.com/Champion1102/Kanvo
 - Live App: https://capstone-ap.vercel.app/
 - Backend (Render): https://capstoneap.onrender.com
 - License: MIT

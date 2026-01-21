@@ -8,8 +8,8 @@ const User = require('../models/user');
 router.post(
   '/signup',
   body('username')
-    .isLength({ min: 8 })
-    .withMessage('Username must be at least 8 characters')
+    .isLength({ max: 10 })
+    .withMessage('Username must be at most 10 characters')
     .custom(async (value) => {
       const user = await User.findOne({ username: value });
       if (user) {
@@ -50,8 +50,8 @@ router.post(
     .withMessage('Invalid email format')
     .optional({ checkFalsy: true }),
   body('username')
-    .isLength({ min: 8 })
-    .withMessage('Username must be at least 8 characters')
+    .isLength({ max: 10 })
+    .withMessage('Username must be at most 10 characters')
     .optional({ checkFalsy: true }),
   body('password')
     .isLength({ min: 8 })
