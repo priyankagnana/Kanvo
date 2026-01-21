@@ -3,7 +3,7 @@ import StarBorderOutlinedIcon from '@mui/icons-material/StarBorderOutlined'
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined'
 import SearchIcon from '@mui/icons-material/Search'
 import FilterListIcon from '@mui/icons-material/FilterList'
-import { Box, IconButton, TextField, Typography, useTheme, Select, MenuItem, FormControl, InputLabel, Collapse, Chip } from '@mui/material'
+import { Box, IconButton, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Collapse, Chip } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -31,7 +31,6 @@ const Board = () => {
   const [filterStatus, setFilterStatus] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [filteredSections, setFilteredSections] = useState([])
-  const theme = useTheme()
 
 
   const boards = useSelector((state) => state.board.value)
