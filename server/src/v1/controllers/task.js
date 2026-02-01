@@ -92,45 +92,50 @@ exports.updatePosition = async (req, res) => {
 exports.search = async (req, res) => {
   try {
     const { boardId } = req.params
-    const { search, sort, filter, priority, status, page = 1, limit = 10 } = req.query
-    
+    const { search, sort, filter, priority, status, page = 1, limit = 1000 } = req.query
+
     // Verify board belongs to user
     const board = await Board.findOne({ _id: boardId, user: req.user._id })
     if (!board) {
       return res.status(404).json('Board not found')
     }
-    
+
     // Get all sections for this board
     const sections = await Section.find({ board: boardId })
     const sectionIds = sections.map(s => s._id)
-    
-    // Build query
-    let query = { section: { $in: sectionIds } }
-    
+
+    // Build query using $and for proper combination of conditions
+    const conditions = [{ section: { $in: sectionIds } }]
+
     // Search by title or content
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } }
-      ]
+      conditions.push({
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { content: { $regex: search, $options: 'i' } }
+        ]
+      })
     }
-    
+
     // Filter by priority
     if (priority) {
-      query.priority = priority
+      conditions.push({ priority: priority })
     }
-    
+
     // Filter by status
     if (status) {
-      query.status = status
+      conditions.push({ status: status })
     }
-    
+
     // Filter by tags (if provided as comma-separated string)
     if (filter && filter.includes('tag:')) {
       const tag = filter.replace('tag:', '')
-      query.tags = { $in: [tag] }
+      conditions.push({ tags: { $in: [tag] } })
     }
-    
+
+    // Combine conditions with $and
+    const query = conditions.length > 1 ? { $and: conditions } : conditions[0]
+
     // Build sort object
     let sortObj = { position: 1 } // default sort
     if (sort) {
@@ -140,18 +145,18 @@ exports.search = async (req, res) => {
       else if (sort === 'dueDate') sortObj = { dueDate: 1 }
       else if (sort === 'priority') sortObj = { priority: 1 }
     }
-    
+
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit)
-    
+
     const tasks = await Task.find(query)
       .populate('section')
       .sort(sortObj)
       .skip(skip)
       .limit(parseInt(limit))
-    
+
     const total = await Task.countDocuments(query)
-    
+
     res.status(200).json({
       tasks,
       pagination: {

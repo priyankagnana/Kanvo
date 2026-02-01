@@ -1,4 +1,4 @@
-const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1/';
+const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001/api/v1/';
 
 const getToken = () => localStorage.getItem('token');
 

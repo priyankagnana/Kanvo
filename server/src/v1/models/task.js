@@ -34,7 +34,21 @@ const taskSchema = new Schema({
     type: String,
     enum: ['todo', 'in-progress', 'completed'],
     default: 'todo'
-  }
+  },
+  subtasks: [{
+    id: {
+      type: String,
+      required: true
+    },
+    title: {
+      type: String,
+      default: ''
+    },
+    completed: {
+      type: Boolean,
+      default: false
+    }
+  }]
 }, schemaOptions)
 
 module.exports = mongoose.model('Task', taskSchema)
