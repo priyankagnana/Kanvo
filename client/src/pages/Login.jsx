@@ -1,20 +1,34 @@
-import { Box, Button, TextField, IconButton, InputAdornment, Typography, Divider, Alert } from '@mui/material'
+import { Box, TextField, IconButton, InputAdornment, Typography, Alert } from '@mui/material'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useTheme } from '@mui/material/styles'
 import LoadingButton from '@mui/lab/LoadingButton'
 import authApi from '../api/authApi'
 
 const Login = () => {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const dark = theme.palette.mode === 'dark'
 
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', general: '' })
   const [showPassword, setShowPassword] = useState(false)
+
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '10px',
+      bgcolor: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+      '& fieldset': { borderColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)' },
+      '&:hover fieldset': { borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' },
+      '&.Mui-focused fieldset': { borderColor: dark ? '#fafafa' : '#111113', borderWidth: 1 }
+    },
+    '& .MuiInputLabel-root': { color: dark ? '#52525b' : '#a1a1aa', fontSize: '0.875rem' },
+    '& .MuiInputLabel-root.Mui-focused': { color: dark ? '#a1a1aa' : '#52525b' },
+    '& .MuiOutlinedInput-input': { color: dark ? '#fafafa' : '#111113', fontSize: '0.9rem' }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,186 +39,107 @@ const Login = () => {
     const password = formData.get('password').trim()
 
     const newErrors = {}
-    if (!email) newErrors.email = 'Please fill this field'
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email address'
+    if (!email) newErrors.email = 'Required'
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email'
+    if (!password) newErrors.password = 'Required'
 
-    if (!password) newErrors.password = 'Please fill this field'
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
 
     setLoading(true)
-
     try {
       const res = await authApi.login({ email, password })
       localStorage.setItem('token', res.token)
       navigate('/boards')
     } catch (err) {
-      const serverErrors = err?.errors || []
       const apiErrors = { email: '', password: '', general: '' }
 
-      serverErrors.forEach((error) => {
-        const field = error.param || error.path
-        const message = error.msg || error.message
-
-        if (field && apiErrors.hasOwnProperty(field)) {
-          apiErrors[field] = message
-        } else if (message) {
-          if (message.toLowerCase().includes('email')) {
-            apiErrors.email = message
-          } else if (message.toLowerCase().includes('password')) {
-            apiErrors.password = message
-          } else {
-            apiErrors.general = message
+      // Handle direct message (e.g. rate limiter, server errors)
+      if (err?.message && !err?.errors) {
+        apiErrors.general = err.message
+      } else {
+        const serverErrors = err?.errors || []
+        serverErrors.forEach((error) => {
+          const field = error.param || error.path
+          const message = error.msg || error.message
+          if (field && apiErrors.hasOwnProperty(field)) apiErrors[field] = message
+          else if (message) {
+            if (message.toLowerCase().includes('email')) apiErrors.email = message
+            else if (message.toLowerCase().includes('password')) apiErrors.password = message
+            else apiErrors.general = message
           }
-        }
-      })
-
-      // Default error for login failures
-      if (!Object.values(apiErrors).some(v => v)) {
-        apiErrors.general = 'Invalid email or password'
+        })
+        if (!Object.values(apiErrors).some(v => v)) apiErrors.general = 'Invalid email or password'
       }
 
       setErrors(apiErrors)
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
-    >
-      <Typography variant="h5" fontWeight={600} textAlign="center" sx={{ mb: 1 }}>
+    <Box>
+      <Typography sx={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.03em', color: dark ? '#fafafa' : '#111113', mb: 0.5 }}>
         Welcome back
       </Typography>
-      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mb: 3 }}>
+      <Typography sx={{ fontSize: '0.85rem', color: dark ? '#52525b' : '#a1a1aa', mb: 4 }}>
         Sign in to continue to your boards
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} noValidate>
         {errors.general && (
-          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+          <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '0.825rem' }}>
             {errors.general}
           </Alert>
         )}
 
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="email"
-          label="Email address"
-          name="email"
-          autoComplete="email"
-          autoFocus
-          disabled={loading}
-          error={!!errors.email}
-          helperText={errors.email}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <EmailOutlinedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-              </InputAdornment>
-            )
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2
-            }
-          }}
-        />
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          id="password"
-          label="Password"
-          name="password"
-          type={showPassword ? 'text' : 'password'}
-          autoComplete="current-password"
-          disabled={loading}
-          error={!!errors.password}
-          helperText={errors.password}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <LockOutlinedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  edge="end"
-                  disabled={loading}
-                  size="small"
-                >
-                  {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 2
-            }
-          }}
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            fullWidth label="Email" name="email" autoComplete="email" autoFocus
+            disabled={loading} error={!!errors.email} helperText={errors.email} sx={inputSx}
+          />
+          <TextField
+            fullWidth label="Password" name="password"
+            type={showPassword ? 'text' : 'password'} autoComplete="current-password"
+            disabled={loading} error={!!errors.password} helperText={errors.password}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword(p => !p)} edge="end" size="small" sx={{ color: dark ? '#52525b' : '#a1a1aa' }}>
+                    {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+            sx={inputSx}
+          />
+        </Box>
 
         <LoadingButton
+          variant="contained" fullWidth type="submit" loading={loading}
+          endIcon={<ArrowForwardIcon sx={{ fontSize: '16px !important' }} />}
           sx={{
-            mt: 3,
-            mb: 2,
-            py: 1.5,
-            borderRadius: 2,
-            fontWeight: 600,
-            fontSize: '1rem',
-            textTransform: 'none',
-            background: 'linear-gradient(135deg, #0052CC 0%, #6554C0 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #0747A6 0%, #403294 100%)'
-            }
+            mt: 3.5, py: 1.25, borderRadius: '10px', fontWeight: 600, fontSize: '0.875rem', textTransform: 'none',
+            bgcolor: dark ? '#fafafa' : '#111113',
+            color: dark ? '#111113' : '#fafafa',
+            boxShadow: 'none',
+            '&:hover': { bgcolor: dark ? '#e4e4e7' : '#27272a', boxShadow: 'none' }
           }}
-          variant="contained"
-          fullWidth
-          type="submit"
-          loading={loading}
         >
           Sign in
         </LoadingButton>
       </Box>
 
-      <Divider sx={{ my: 2 }}>
-        <Typography variant="caption" color="text.secondary">
-          or
-        </Typography>
-      </Divider>
-
-      <Box sx={{ textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
+      <Box sx={{ mt: 4, textAlign: 'center' }}>
+        <Typography sx={{ fontSize: '0.8rem', color: dark ? '#3f3f46' : '#a1a1aa' }}>
           Don't have an account?{' '}
-          <Button
-            component={Link}
-            to="/signup"
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              p: 0,
-              minWidth: 'auto',
-              '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' }
-            }}
+          <Typography
+            component={Link} to="/signup"
+            sx={{ color: dark ? '#a1a1aa' : '#52525b', fontWeight: 600, textDecoration: 'none', '&:hover': { color: dark ? '#fafafa' : '#111113' }, transition: 'color 0.2s' }}
           >
             Create one
-          </Button>
+          </Typography>
         </Typography>
       </Box>
-    </motion.div>
+    </Box>
   )
 }
 

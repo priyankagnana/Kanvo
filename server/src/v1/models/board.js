@@ -35,4 +35,7 @@ const boardSchema = new Schema({
   }
 }, schemaOptions)
 
+boardSchema.index({ user: 1, position: 1 })
+boardSchema.index({ user: 1, favourite: 1, favouritePosition: 1 })
+
 module.exports = mongoose.model('Board', boardSchema)

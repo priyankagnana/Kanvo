@@ -1,5 +1,6 @@
-import { IconButton, Modal, Box, TextField, Typography, Divider, Select, MenuItem, FormControl, Chip } from '@mui/material'
-import React, { useEffect, useRef, useState } from 'react'
+import { IconButton, Modal, Box, TextField, Typography, Divider, Select, MenuItem, FormControl, Chip, Fade } from '@mui/material'
+import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined'
+import React, { useEffect, useRef, useState, useCallback, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import CloseIcon from '@mui/icons-material/Close'
@@ -8,13 +9,17 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import LocalOfferIcon from '@mui/icons-material/LocalOffer'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import Moment from 'moment'
-import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import { useTheme } from '@mui/material/styles'
 import taskApi from '../../api/taskApi'
 import SubtaskList from './SubtaskList'
+import ConfirmDialog from './ConfirmDialog'
+import { useToast } from './ToastProvider'
 
 import '../../css/custom-editor.css'
+
+// Lazy load ReactQuill — it's a heavy dependency
+const ReactQuill = React.lazy(() => import('react-quill'))
 
 // Priority configuration
 const priorityConfig = {
@@ -30,9 +35,7 @@ const statusConfig = {
   'completed': { color: '#36B37E', label: 'Done', bg: '#E3FCEF' }
 }
 
-let timer
 const timeout = 500
-let isModalClosed = false
 
 const TaskModal = (props) => {
   const boardId = props.boardId
@@ -45,7 +48,19 @@ const TaskModal = (props) => {
   const [tags, setTags] = useState([])
   const [subtasks, setSubtasks] = useState([])
   const [tagInput, setTagInput] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [saveStatus, setSaveStatus] = useState('') // '' | 'saving' | 'saved'
   const editorWrapperRef = useRef()
+  const timerRef = useRef(null)
+  const saveIndicatorRef = useRef(null)
+  const isModalClosedRef = useRef(false)
+  const toast = useToast()
+
+  const showSaved = useCallback(() => {
+    setSaveStatus('saved')
+    clearTimeout(saveIndicatorRef.current)
+    saveIndicatorRef.current = setTimeout(() => setSaveStatus(''), 2000)
+  }, [])
 
   const theme = useTheme()
 
@@ -59,105 +74,120 @@ const TaskModal = (props) => {
     setTags(props.task !== undefined ? (props.task.tags || []) : [])
     setSubtasks(props.task !== undefined ? (props.task.subtasks || []) : [])
     if (props.task !== undefined) {
-      isModalClosed = false
+      isModalClosedRef.current = false
     }
   }, [props.task])
 
-  const onClose = () => {
-    isModalClosed = true
+  const onClose = useCallback(() => {
+    isModalClosedRef.current = true
     props.onUpdate(task)
     props.onClose()
-  }
+  }, [task, props])
 
-  const deleteTask = async () => {
+  const deleteTask = useCallback(async () => {
+    setShowDeleteConfirm(false)
     try {
       await taskApi.delete(boardId, task.id)
       props.onDelete(task)
       setTask(undefined)
+      toast.success('Task deleted')
     } catch (err) {
-      console.error('Error deleting task:', err)
+      toast.error('Failed to delete task')
     }
-  }
+  }, [boardId, task, props, toast])
 
-  const updateTitle = async (e) => {
-    clearTimeout(timer)
+  const updateTitle = useCallback(async (e) => {
+    clearTimeout(timerRef.current)
     const newTitle = e.target.value
-    timer = setTimeout(async () => {
+    setSaveStatus('saving')
+    timerRef.current = setTimeout(async () => {
       try {
         await taskApi.update(boardId, task.id, { title: newTitle })
+        showSaved()
       } catch (err) {
-        console.error('Error updating title:', err)
+        setSaveStatus('')
+        toast.error('Failed to save')
       }
     }, timeout)
 
-    task.title = newTitle
+    const updatedTask = { ...task, title: newTitle }
+    setTask(updatedTask)
     setTitle(newTitle)
-    props.onUpdate(task)
-  }
+    props.onUpdate(updatedTask)
+  }, [boardId, task, props, showSaved, toast])
 
-  const updateContent = async (content) => {
-    clearTimeout(timer)
+  const updateContent = useCallback(async (newContent) => {
+    clearTimeout(timerRef.current)
 
-    if (!isModalClosed) {
-      timer = setTimeout(async () => {
+    if (!isModalClosedRef.current) {
+      setSaveStatus('saving')
+      timerRef.current = setTimeout(async () => {
         try {
-          await taskApi.update(boardId, task.id, { content })
+          await taskApi.update(boardId, task.id, { content: newContent })
+          showSaved()
         } catch (err) {
-          console.error('Error updating content:', err)
+          setSaveStatus('')
+          toast.error('Failed to save')
         }
       }, timeout)
 
-      task.content = content
-      setContent(content)
-      props.onUpdate(task)
+      const updatedTask = { ...task, content: newContent }
+      setTask(updatedTask)
+      setContent(newContent)
+      props.onUpdate(updatedTask)
     }
-  }
+  }, [boardId, task, props, showSaved, toast])
 
-  const updatePriority = async (newPriority) => {
+  const updatePriority = useCallback(async (newPriority) => {
     setPriority(newPriority)
     try {
       await taskApi.update(boardId, task.id, { priority: newPriority })
-      task.priority = newPriority
-      props.onUpdate(task)
+      const updatedTask = { ...task, priority: newPriority }
+      setTask(updatedTask)
+      props.onUpdate(updatedTask)
     } catch (err) {
       console.error('Error updating priority:', err)
     }
-  }
+  }, [boardId, task, props])
 
-  const updateStatus = async (newStatus) => {
+  const updateStatus = useCallback(async (newStatus) => {
     setStatus(newStatus)
     try {
       await taskApi.update(boardId, task.id, { status: newStatus })
-      task.status = newStatus
-      props.onUpdate(task)
+      const updatedTask = { ...task, status: newStatus }
+      setTask(updatedTask)
+      props.onUpdate(updatedTask)
     } catch (err) {
       console.error('Error updating status:', err)
     }
-  }
+  }, [boardId, task, props])
 
-  const updateDueDate = async (newDueDate) => {
+  const updateDueDate = useCallback(async (newDueDate) => {
     setDueDate(newDueDate)
     try {
-      await taskApi.update(boardId, task.id, { dueDate: newDueDate ? new Date(newDueDate) : null })
-      task.dueDate = newDueDate ? new Date(newDueDate) : null
-      props.onUpdate(task)
+      const dateValue = newDueDate ? new Date(newDueDate) : null
+      await taskApi.update(boardId, task.id, { dueDate: dateValue })
+      const updatedTask = { ...task, dueDate: dateValue }
+      setTask(updatedTask)
+      props.onUpdate(updatedTask)
     } catch (err) {
       console.error('Error updating due date:', err)
     }
-  }
+  }, [boardId, task, props])
 
-  const updateSubtasks = async (newSubtasks) => {
+  const updateSubtasks = useCallback(async (newSubtasks) => {
     setSubtasks(newSubtasks)
     try {
       await taskApi.update(boardId, task.id, { subtasks: newSubtasks })
-      task.subtasks = newSubtasks
-      props.onUpdate(task)
+      const updatedTask = { ...task, subtasks: newSubtasks }
+      setTask(updatedTask)
+      props.onUpdate(updatedTask)
     } catch (err) {
       console.error('Error updating subtasks:', err)
     }
-  }
+  }, [boardId, task, props])
 
-  const addTag = async (e) => {
+  const addTag = useCallback(async (e) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault()
       const newTags = [...tags, tagInput.trim()]
@@ -165,27 +195,30 @@ const TaskModal = (props) => {
       setTagInput('')
       try {
         await taskApi.update(boardId, task.id, { tags: newTags })
-        task.tags = newTags
-        props.onUpdate(task)
+        const updatedTask = { ...task, tags: newTags }
+        setTask(updatedTask)
+        props.onUpdate(updatedTask)
       } catch (err) {
         console.error('Error adding tag:', err)
       }
     }
-  }
+  }, [boardId, task, tags, tagInput, props])
 
-  const removeTag = async (tagToRemove) => {
+  const removeTag = useCallback(async (tagToRemove) => {
     const newTags = tags.filter(tag => tag !== tagToRemove)
     setTags(newTags)
     try {
       await taskApi.update(boardId, task.id, { tags: newTags })
-      task.tags = newTags
-      props.onUpdate(task)
+      const updatedTask = { ...task, tags: newTags }
+      setTask(updatedTask)
+      props.onUpdate(updatedTask)
     } catch (err) {
       console.error('Error removing tag:', err)
     }
-  }
+  }, [boardId, task, tags, props])
 
   return (
+    <>
     <AnimatePresence>
       {task !== undefined && (
         <Modal
@@ -203,7 +236,7 @@ const TaskModal = (props) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            style={{ outline: 'none', width: '80%', maxWidth: '1100px' }}
+            style={{ outline: 'none', width: '90%', maxWidth: '1100px' }}
           >
             <Box
               sx={{
@@ -228,11 +261,19 @@ const TaskModal = (props) => {
                   borderColor: 'divider'
                 }}
               >
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                  KAN-{task?.id?.slice(-4).toUpperCase()}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    KAN-{task?.id?.slice(-4).toUpperCase()}
+                  </Typography>
+                  <Fade in={saveStatus === 'saved'}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <CloudDoneOutlinedIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                      <Typography sx={{ fontSize: '0.7rem', color: 'success.main', fontWeight: 500 }}>Saved</Typography>
+                    </Box>
+                  </Fade>
+                </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton size="small" color="error" onClick={deleteTask}>
+                  <IconButton size="small" color="error" onClick={() => setShowDeleteConfirm(true)}>
                     <DeleteOutlinedIcon />
                   </IconButton>
                   <IconButton size="small" onClick={onClose}>
@@ -241,15 +282,16 @@ const TaskModal = (props) => {
                 </Box>
               </Box>
 
-              {/* Content - Two Column Layout */}
-              <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              {/* Content - Two Column Layout (stacks on mobile) */}
+              <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', flexDirection: { xs: 'column', md: 'row' } }}>
                 {/* Left Column - Main Content */}
                 <Box
                   sx={{
                     flex: 2,
-                    p: 3,
+                    p: { xs: 2, md: 3 },
                     overflowY: 'auto',
-                    borderRight: 1,
+                    borderRight: { xs: 'none', md: 1 },
+                    borderBottom: { xs: 1, md: 'none' },
                     borderColor: 'divider'
                   }}
                 >
@@ -290,13 +332,15 @@ const TaskModal = (props) => {
                       }
                     }}
                   >
-                    <ReactQuill
-                      value={content}
-                      onChange={updateContent}
-                      theme="snow"
-                      placeholder="Add a description..."
-                      className={theme.palette.mode === 'light' ? 'ql-editor-light' : 'ql-editor-dark'}
-                    />
+                    <Suspense fallback={<Box sx={{ minHeight: '150px', bgcolor: 'action.hover', borderRadius: 1 }} />}>
+                      <ReactQuill
+                        value={content}
+                        onChange={updateContent}
+                        theme="snow"
+                        placeholder="Add a description..."
+                        className={theme.palette.mode === 'light' ? 'ql-editor-light' : 'ql-editor-dark'}
+                      />
+                    </Suspense>
                   </Box>
 
                   <Divider sx={{ my: 3 }} />
@@ -338,7 +382,7 @@ const TaskModal = (props) => {
                     p: 3,
                     bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
                     overflowY: 'auto',
-                    minWidth: 280
+                    minWidth: { xs: 'auto', md: 280 }
                   }}
                 >
                   <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
@@ -452,31 +496,22 @@ const TaskModal = (props) => {
                       sx={{ mb: 1 }}
                     />
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      <AnimatePresence>
-                        {tags.map((tag, index) => (
-                          <motion.div
-                            key={tag}
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <Chip
-                              label={tag}
-                              onDelete={() => removeTag(tag)}
-                              size="small"
-                              sx={{
-                                bgcolor: 'primary.main',
-                                color: 'white',
-                                '& .MuiChip-deleteIcon': {
-                                  color: 'rgba(255,255,255,0.7)',
-                                  '&:hover': { color: 'white' }
-                                }
-                              }}
-                            />
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
+                      {tags.map((tag) => (
+                        <Chip
+                          key={tag}
+                          label={tag}
+                          onDelete={() => removeTag(tag)}
+                          size="small"
+                          sx={{
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            '& .MuiChip-deleteIcon': {
+                              color: 'rgba(255,255,255,0.7)',
+                              '&:hover': { color: 'white' }
+                            }
+                          }}
+                        />
+                      ))}
                     </Box>
                   </Box>
 
@@ -498,6 +533,16 @@ const TaskModal = (props) => {
         </Modal>
       )}
     </AnimatePresence>
+
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      title="Delete task"
+      message={`Delete "${title || 'Untitled'}"? This cannot be undone.`}
+      confirmLabel="Delete task"
+      onConfirm={deleteTask}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+    </>
   )
 }
 

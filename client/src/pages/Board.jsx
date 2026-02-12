@@ -6,8 +6,9 @@ import SortIcon from '@mui/icons-material/Sort'
 import CloseIcon from '@mui/icons-material/Close'
 import FlagIcon from '@mui/icons-material/Flag'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
-import { Box, IconButton, TextField, Typography, Chip, InputAdornment, CircularProgress, LinearProgress } from '@mui/material'
-import { useEffect, useState, useMemo } from 'react'
+import { Box, IconButton, TextField, Typography, Chip, InputAdornment, CircularProgress, LinearProgress, Fade } from '@mui/material'
+import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,16 +16,29 @@ import boardApi from '../api/boardApi'
 import taskApi from '../api/taskApi'
 import EmojiPicker from '../components/common/EmojiPicker'
 import Kanban from '../components/common/Kanban'
+import KanbanSkeleton from '../components/common/KanbanSkeleton'
 import { setBoards } from '../redux/features/boardSlice'
 import { setFavouriteList } from '../redux/features/favouriteSlice'
+import ConfirmDialog from '../components/common/ConfirmDialog'
+import { useToast } from '../components/common/ToastProvider'
 
-let timer
 const timeout = 500
+
+// Debounce hook - delays value updates to prevent API spam
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(id)
+  }, [value, delay])
+  return debounced
+}
 
 const Board = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { boardId } = useParams()
+  const timerRef = useRef(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [sections, setSections] = useState([])
@@ -37,9 +51,22 @@ const Board = () => {
   const [filteredSections, setFilteredSections] = useState([])
   const [isFiltering, setIsFiltering] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [saveStatus, setSaveStatus] = useState('')
+  const saveIndicatorRef = useRef(null)
+  const toast = useToast()
+
+  const showSaved = () => {
+    setSaveStatus('saved')
+    clearTimeout(saveIndicatorRef.current)
+    saveIndicatorRef.current = setTimeout(() => setSaveStatus(''), 2000)
+  }
 
   const boards = useSelector((state) => state.board.value)
   const favouriteList = useSelector((state) => state.favourites.value)
+
+  // Debounce search query to prevent API call on every keystroke
+  const debouncedSearch = useDebounce(searchQuery, 300)
 
   // Calculate board stats
   const boardStats = useMemo(() => {
@@ -77,15 +104,15 @@ const Board = () => {
 
   useEffect(() => {
     const applyFilters = async () => {
-      if (!searchQuery && !sortBy && !filterPriority && !filterStatus) {
+      if (!debouncedSearch && !sortBy && !filterPriority && !filterStatus) {
         setFilteredSections([])
         return
       }
 
       setIsFiltering(true)
       try {
-        const params = { limit: 1000 }
-        if (searchQuery) params.search = searchQuery
+        const params = {}
+        if (debouncedSearch) params.search = debouncedSearch
         if (sortBy) params.sort = sortBy
         if (filterPriority) params.priority = filterPriority
         if (filterStatus) params.status = filterStatus
@@ -126,7 +153,7 @@ const Board = () => {
     } else {
       setFilteredSections([])
     }
-  }, [boardId, sections, searchQuery, sortBy, filterPriority, filterStatus])
+  }, [boardId, sections, debouncedSearch, sortBy, filterPriority, filterStatus])
 
   const clearAllFilters = () => {
     setSearchQuery('')
@@ -157,7 +184,7 @@ const Board = () => {
   }
 
   const updateTitle = async (e) => {
-    clearTimeout(timer)
+    clearTimeout(timerRef.current)
     const newTitle = e.target.value
     setTitle(newTitle)
 
@@ -174,24 +201,30 @@ const Board = () => {
 
     dispatch(setBoards(temp))
 
-    timer = setTimeout(async () => {
+    setSaveStatus('saving')
+    timerRef.current = setTimeout(async () => {
       try {
         await boardApi.update(boardId, { title: newTitle })
+        showSaved()
       } catch (err) {
-        console.error('Error updating title:', err)
+        setSaveStatus('')
+        toast.error('Failed to save')
       }
     }, timeout)
   }
 
   const updateDescription = async (e) => {
-    clearTimeout(timer)
+    clearTimeout(timerRef.current)
     const newDescription = e.target.value
     setDescription(newDescription)
-    timer = setTimeout(async () => {
+    setSaveStatus('saving')
+    timerRef.current = setTimeout(async () => {
       try {
         await boardApi.update(boardId, { description: newDescription })
+        showSaved()
       } catch (err) {
-        console.error('Error updating description:', err)
+        setSaveStatus('')
+        toast.error('Failed to save')
       }
     }, timeout)
   }
@@ -213,6 +246,7 @@ const Board = () => {
   }
 
   const deleteBoard = async () => {
+    setShowDeleteConfirm(false)
     try {
       await boardApi.delete(boardId)
       if (isFavourite) {
@@ -227,15 +261,16 @@ const Board = () => {
         navigate(`/boards/${newList[0].id}`)
       }
       dispatch(setBoards(newList))
+      toast.success('Board deleted')
     } catch (err) {
-      console.error('Error deleting board:', err)
+      toast.error('Failed to delete board')
     }
   }
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress />
+      <Box sx={{ padding: { xs: '10px 16px', md: '10px 50px' } }}>
+        <KanbanSkeleton columns={3} cardsPerColumn={4} />
       </Box>
     )
   }
@@ -268,12 +303,20 @@ const Board = () => {
           Kanvo
         </Typography>
 
-        <IconButton color='error' onClick={deleteBoard}>
-          <DeleteOutlinedIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Fade in={saveStatus === 'saved'}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <CloudDoneOutlinedIcon sx={{ fontSize: 16, color: 'success.main' }} />
+              <Typography sx={{ fontSize: '0.75rem', color: 'success.main', fontWeight: 500 }}>Saved</Typography>
+            </Box>
+          </Fade>
+          <IconButton color='error' onClick={() => setShowDeleteConfirm(true)}>
+            <DeleteOutlinedIcon />
+          </IconButton>
+        </Box>
       </Box>
 
-      <Box sx={{ padding: '10px 50px' }}>
+      <Box sx={{ padding: { xs: '10px 16px', md: '10px 50px' } }}>
         {/* Board Header */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{
@@ -390,8 +433,8 @@ const Board = () => {
           )}
         </Box>
 
-        {/* Quick Filters Bar */}
-        <Box sx={{ mb: 3 }}>
+        {/* Quick Filters Bar — sticky */}
+        <Box sx={{ mb: 3, position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.default', py: 1, mx: -1, px: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
             {/* Search Input */}
             <TextField
@@ -539,6 +582,15 @@ const Board = () => {
           />
         </Box>
       </Box>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete board"
+        message={`Are you sure you want to delete "${title || 'Untitled'}"? All sections and tasks will be permanently removed.`}
+        confirmLabel="Delete board"
+        onConfirm={deleteBoard}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </motion.div>
   )
 }

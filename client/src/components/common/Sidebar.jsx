@@ -12,15 +12,27 @@ import boardApi from '../../api/boardApi';
 import { setBoards } from '../../redux/features/boardSlice';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import FavouriteList from './FavouriteList';
+import ConfirmDialog from './ConfirmDialog';
+import { useToast } from './ToastProvider';
 import { useTheme } from '@mui/material/styles';
+// Debounce hook
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(id)
+  }, [value, delay])
+  return debounced
+}
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, onMobileClose }) => {
   const user = useSelector((state) => state.user.value);
   const boards = useSelector((state) => state.board.value);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { boardId } = useParams();
   const location = useLocation();
+  const toast = useToast();
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -28,6 +40,8 @@ const Sidebar = () => {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: '' });
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const sidebarWidth = 250;
 
@@ -36,14 +50,14 @@ const Sidebar = () => {
   useEffect(() => {
     const getBoards = async () => {
       try {
-        const hasFilters = searchQuery || sortBy || filterBy;
+        const hasFilters = debouncedSearch || sortBy || filterBy;
         const params = {};
 
         if (hasFilters || page > 1) {
           params.page = page;
           params.limit = 10;
         }
-        if (searchQuery) params.search = searchQuery;
+        if (debouncedSearch) params.search = debouncedSearch;
         if (sortBy) params.sort = sortBy;
         if (filterBy) params.filter = filterBy;
 
@@ -58,11 +72,11 @@ const Sidebar = () => {
           dispatch(setBoards([]));
         }
       } catch (err) {
-        alert(err);
+        toast.error('Failed to load boards');
       }
     };
     getBoards();
-  }, [dispatch, searchQuery, sortBy, filterBy, page]);
+  }, [dispatch, debouncedSearch, sortBy, filterBy, page, toast]);
 
   useEffect(() => {
     const activeItem = boards.findIndex((e) => e.id === boardId);
@@ -94,7 +108,7 @@ const Sidebar = () => {
     try {
       await boardApi.updatePosition({ boards: newList });
     } catch (err) {
-      alert(err);
+      toast.error('Failed to reorder boards');
     }
   };
 
@@ -104,15 +118,22 @@ const Sidebar = () => {
       const newList = [res, ...boards];
       dispatch(setBoards(newList));
       navigate(`/boards/${res.id}`);
+      toast.success('Board created');
     } catch (err) {
-      alert(err);
+      toast.error('Failed to create board');
     }
   };
 
-  const deleteBoard = async (e, id) => {
+  const requestDeleteBoard = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
+    const board = boards.find(b => b.id === id);
+    setDeleteConfirm({ open: true, id, name: board?.title || 'Untitled' });
+  };
 
+  const confirmDeleteBoard = async () => {
+    const id = deleteConfirm.id;
+    setDeleteConfirm({ open: false, id: null, name: '' });
     try {
       await boardApi.delete(id);
       const newList = boards.filter((board) => board.id !== id);
@@ -125,22 +146,13 @@ const Sidebar = () => {
           navigate('/boards');
         }
       }
+      toast.success('Board deleted');
     } catch (err) {
-      alert(err);
+      toast.error('Failed to delete board');
     }
   };
 
-  return (
-    <Drawer
-      container={window.document.body}
-      variant="permanent"
-      open={true}
-      sx={{
-        width: sidebarWidth,
-        height: '100vh',
-        '& > div': { borderRight: 'none' },
-      }}
-    >
+  const sidebarContent = (
       <Box
         sx={{
           width: sidebarWidth,
@@ -157,6 +169,8 @@ const Sidebar = () => {
           sx={{
             cursor: 'pointer',
             py: 2,
+            textDecoration: 'none',
+            color: 'inherit',
             '&:hover': {
               backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
             },
@@ -182,10 +196,10 @@ const Sidebar = () => {
               {user.username?.[0]?.toUpperCase() || 'U'}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" fontWeight="700" noWrap>
+              <Typography variant="body2" fontWeight="700" noWrap sx={{ color: 'text.primary' }}>
                 {user.username}
               </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
+              <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
                 View Profile
               </Typography>
             </Box>
@@ -322,7 +336,9 @@ const Sidebar = () => {
                           sx={{
                             pl: '20px',
                             pr: 1,
-                            cursor: snapshot.isDragging ? 'grab' : 'pointer!important',
+                            cursor: snapshot.isDragging ? 'grab' : 'pointer',
+                            textDecoration: 'none',
+                            color: 'inherit',
                             backgroundColor: 'transparent',
                             '&.Mui-selected': {
                               backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
@@ -351,7 +367,7 @@ const Sidebar = () => {
                             <IconButton
                               className="delete-btn"
                               size="small"
-                              onClick={(e) => deleteBoard(e, item.id)}
+                              onClick={(e) => requestDeleteBoard(e, item.id)}
                               sx={{
                                 opacity: 0,
                                 transition: 'opacity 0.2s',
@@ -384,6 +400,7 @@ const Sidebar = () => {
             sx={{
               borderRadius: 1,
               py: 1,
+              cursor: 'pointer',
               '&:hover': {
                 backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
               },
@@ -396,7 +413,51 @@ const Sidebar = () => {
           </ListItemButton>
         </ListItem>
       </Box>
-    </Drawer>
+  );
+
+  return (
+    <>
+      {/* Mobile drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { width: sidebarWidth, borderRight: 'none' },
+        }}
+      >
+        {sidebarContent}
+      </Drawer>
+
+      {/* Desktop drawer */}
+      <Drawer
+        variant="permanent"
+        open
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          width: sidebarWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: sidebarWidth,
+            borderRight: '1px solid',
+            borderColor: 'divider'
+          },
+        }}
+      >
+        {sidebarContent}
+      </Drawer>
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Delete board"
+        message={`Are you sure you want to delete "${deleteConfirm.name}"? All sections and tasks in this board will be permanently removed.`}
+        confirmLabel="Delete board"
+        onConfirm={confirmDeleteBoard}
+        onCancel={() => setDeleteConfirm({ open: false, id: null, name: '' })}
+      />
+    </>
   );
 };
 

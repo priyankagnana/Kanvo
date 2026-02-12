@@ -7,7 +7,7 @@ const assets = {
     },
     colors: {
       secondary: '#292929',
-      secondaryDark: '#1a1a2e',
+      secondaryDark: '#0f0f0f',
       secondaryLight: '#f4f5f7'
     }
   }

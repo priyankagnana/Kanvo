@@ -1,16 +1,18 @@
 import { Box, ListItem, ListItemButton, Typography } from '@mui/material'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams, Link } from 'react-router-dom'
 import boardApi from '../../api/boardApi'
 import { setFavouriteList } from '../../redux/features/favouriteSlice'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
+import { useToast } from './ToastProvider'
 
-const FavouriteList = () => {
+const FavouriteList = React.memo(() => {
   const dispatch = useDispatch()
   const list = useSelector((state) => state.favourites.value)
   const [activeIndex, setActiveIndex] = useState(0)
   const { boardId } = useParams()
+  const toast = useToast()
 
   useEffect(() => {
     const getBoards = async () => {
@@ -18,26 +20,20 @@ const FavouriteList = () => {
         const res = await boardApi.getFavourites()
         dispatch(setFavouriteList(res))
       } catch (err) {
-        alert(err)
+        toast.error('Something went wrong')
       }
     }
     getBoards()
-  }, [dispatch])
+  }, [dispatch, toast])
 
   useEffect(() => {
     const index = list.findIndex(e => e.id === boardId)
     setActiveIndex(index)
   }, [list, boardId])
 
-  const onDragEnd = async ({ source, destination }) => {
-    if (!destination) {
-        return;
-      }
-    
-      if (source.index === destination.index) {
-        return; 
-      }
-    
+  const onDragEnd = useCallback(async ({ source, destination }) => {
+    if (!destination) return
+    if (source.index === destination.index) return
 
     const newList = [...list]
     const [removed] = newList.splice(source.index, 1)
@@ -51,9 +47,9 @@ const FavouriteList = () => {
     try {
       await boardApi.updateFavouritePosition({ boards: newList })
     } catch (err) {
-      alert(err)
+      toast.error('Failed to reorder favourites')
     }
-  }
+  }, [list, boardId, dispatch, toast])
 
   return (
     <>
@@ -70,12 +66,12 @@ const FavouriteList = () => {
         </Box>
       </ListItem>
       <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable key={'list-board-droppable-key'} droppableId={'list-board-droppable'}>
+        <Droppable key={'fav-board-droppable-key'} droppableId={'fav-board-droppable'}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {
                 list.map((item, index) => (
-                  <Draggable key={item.id} draggableId={item.id} index={index}>
+                  <Draggable key={`fav-${item.id}`} draggableId={`fav-${item.id}`} index={index}>
                     {(provided, snapshot) => (
                       <ListItemButton
                         ref={provided.innerRef}
@@ -86,7 +82,9 @@ const FavouriteList = () => {
                         to={`/boards/${item.id}`}
                         sx={{
                           pl: '20px',
-                          cursor: snapshot.isDragging ? 'grab' : 'pointer!important'
+                          cursor: snapshot.isDragging ? 'grab' : 'pointer',
+                          textDecoration: 'none',
+                          color: 'inherit'
                         }}
                       >
                         <Typography
@@ -108,6 +106,6 @@ const FavouriteList = () => {
       </DragDropContext>
     </>
   )
-}
+})
 
 export default FavouriteList

@@ -39,7 +39,12 @@ if (!process.env.MONGODB_URL) {
   process.exit(1);
 }
 
-mongoose.connect(process.env.MONGODB_URL).then(() =>{
+mongoose.connect(process.env.MONGODB_URL, {
+  maxPoolSize: 50,
+  minPoolSize: 10,
+  socketTimeoutMS: 45000,
+  maxIdleTimeMS: 30000
+}).then(() =>{
   console.log(`✅ MongoDB connected successfully`);
   server.listen(port);
   server.on('error',onError);

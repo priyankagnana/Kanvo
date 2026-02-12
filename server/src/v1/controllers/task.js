@@ -6,7 +6,7 @@ exports.create = async (req, res) => {
   const { sectionId } = req.body
   try {
     const section = await Section.findById(sectionId)
-    const tasksCount = await Task.find({ section: sectionId }).countDocuments()
+    const tasksCount = await Task.countDocuments({ section: sectionId })
     const task = await Task.create({
       section: sectionId,
       position: tasksCount > 0 ? tasksCount : 0
@@ -36,12 +36,15 @@ exports.delete = async (req, res) => {
   try {
     const currentTask = await Task.findById(taskId)
     await Task.deleteOne({ _id: taskId })
-    const tasks = await Task.find({ section: currentTask.section }).sort('position')
-    for (const key in tasks) {
-      await Task.findByIdAndUpdate(
-        tasks[key].id,
-        { $set: { position: key } }
-      )
+    const tasks = await Task.find({ section: currentTask.section }).sort('position').lean()
+    if (tasks.length > 0) {
+      const ops = tasks.map((task, index) => ({
+        updateOne: {
+          filter: { _id: task._id },
+          update: { $set: { position: index } }
+        }
+      }))
+      await Task.bulkWrite(ops)
     }
     res.status(200).json('deleted')
   } catch (err) {
@@ -59,29 +62,30 @@ exports.updatePosition = async (req, res) => {
   const resourceListReverse = resourceList.reverse()
   const destinationListReverse = destinationList.reverse()
   try {
+    const ops = []
+
     if (resourceSectionId !== destinationSectionId) {
-      for (const key in resourceListReverse) {
-        await Task.findByIdAndUpdate(
-          resourceListReverse[key].id,
-          {
-            $set: {
-              section: resourceSectionId,
-              position: key
-            }
+      resourceListReverse.forEach((item, index) => {
+        ops.push({
+          updateOne: {
+            filter: { _id: item.id },
+            update: { $set: { section: resourceSectionId, position: index } }
           }
-        )
-      }
+        })
+      })
     }
-    for (const key in destinationListReverse) {
-      await Task.findByIdAndUpdate(
-        destinationListReverse[key].id,
-        {
-          $set: {
-            section: destinationSectionId,
-            position: key
-          }
+
+    destinationListReverse.forEach((item, index) => {
+      ops.push({
+        updateOne: {
+          filter: { _id: item.id },
+          update: { $set: { section: destinationSectionId, position: index } }
         }
-      )
+      })
+    })
+
+    if (ops.length > 0) {
+      await Task.bulkWrite(ops)
     }
     res.status(200).json('updated')
   } catch (err) {
@@ -92,16 +96,16 @@ exports.updatePosition = async (req, res) => {
 exports.search = async (req, res) => {
   try {
     const { boardId } = req.params
-    const { search, sort, filter, priority, status, page = 1, limit = 1000 } = req.query
+    const { search, sort, filter, priority, status, page = 1, limit = 50 } = req.query
 
     // Verify board belongs to user
-    const board = await Board.findOne({ _id: boardId, user: req.user._id })
+    const board = await Board.findOne({ _id: boardId, user: req.user._id }).lean()
     if (!board) {
       return res.status(404).json('Board not found')
     }
 
     // Get all sections for this board
-    const sections = await Section.find({ board: boardId })
+    const sections = await Section.find({ board: boardId }).select('_id').lean()
     const sectionIds = sections.map(s => s._id)
 
     // Build query using $and for proper combination of conditions

@@ -14,4 +14,6 @@ const sectionSchema = new Schema({
   }
 }, schemaOptions)
 
+sectionSchema.index({ board: 1 })
+
 module.exports = mongoose.model('Section', sectionSchema)

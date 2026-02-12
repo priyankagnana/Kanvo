@@ -3,21 +3,32 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import './css/custom-scrollbar.css';
-import { CssBaseline, IconButton, Tooltip } from '@mui/material';
+import { CssBaseline, IconButton, Tooltip, CircularProgress, Box } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import AppLayout from './components/layout/Applayout';
 import AuthLayout from './components/layout/AuthLayout';
-import Home from './pages/Home';
-import Board from './pages/Board';
-import Signup from './pages/Signup';
-import Login from './pages/Login';
-import Landing from './pages/Landing';
-import Profile from './pages/Profile';
+import ToastProvider from './components/common/ToastProvider';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
+const NotFound = React.lazy(() => import('./pages/NotFound'));
+
+// Lazy-loaded route components
+const Landing = React.lazy(() => import('./pages/Landing'));
+const Home = React.lazy(() => import('./pages/Home'));
+const Board = React.lazy(() => import('./pages/Board'));
+const Signup = React.lazy(() => import('./pages/Signup'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+
+const PageFallback = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+    <CircularProgress />
+  </Box>
+);
 
 // Theme toggle component that hides on landing page
 const ThemeToggle = ({ darkMode, onToggle }) => {
@@ -50,9 +61,20 @@ const ThemeToggle = ({ darkMode, onToggle }) => {
 };
 
 function App() {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('kanvo-theme');
+    return saved !== null ? saved === 'dark' : true;
+  });
 
-  const theme = createTheme({
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('kanvo-theme', next ? 'dark' : 'light');
+      return next;
+    });
+  };
+
+  const theme = useMemo(() => createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
@@ -81,13 +103,14 @@ function App() {
         dark: '#DE350B',
       },
       background: {
-        default: darkMode ? '#1a1a2e' : '#f4f5f7',
-        paper: darkMode ? '#16213e' : '#ffffff',
+        default: darkMode ? '#0a0a0a' : '#f4f5f7',
+        paper: darkMode ? '#141414' : '#ffffff',
       },
       text: {
-        primary: darkMode ? '#ffffff' : '#172B4D',
-        secondary: darkMode ? '#B3BAC5' : '#5E6C84',
+        primary: darkMode ? '#fafafa' : '#172B4D',
+        secondary: darkMode ? '#a1a1aa' : '#5E6C84',
       },
+      divider: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)',
     },
     typography: {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
@@ -102,7 +125,7 @@ function App() {
         textTransform: 'uppercase',
         fontSize: '0.75rem',
         letterSpacing: '0.08em',
-        color: darkMode ? '#B3BAC5' : '#5E6C84',
+        color: darkMode ? '#a1a1aa' : '#5E6C84',
       },
     },
     shape: {
@@ -152,32 +175,40 @@ function App() {
         },
       },
     },
-  });
+  }), [darkMode]);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ToastProvider>
+      <ErrorBoundary>
       <BrowserRouter>
-        <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode(!darkMode)} />
-        <Routes>
-          {/* Public landing page */}
-          <Route path="/" element={<Landing />} />
+        <ThemeToggle darkMode={darkMode} onToggle={toggleDarkMode} />
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            {/* Public landing page */}
+            <Route path="/" element={<Landing />} />
 
-          {/* Auth routes */}
-          <Route element={<AuthLayout />}>
-            <Route path="login" element={<Login />} />
-            <Route path="signup" element={<Signup />} />
-          </Route>
+            {/* Auth routes */}
+            <Route element={<AuthLayout />}>
+              <Route path="login" element={<Login />} />
+              <Route path="signup" element={<Signup />} />
+            </Route>
 
-          {/* Protected app routes */}
-          <Route element={<AppLayout />}>
-            <Route path="dashboard" element={<Home />} />
-            <Route path="boards" element={<Home />} />
-            <Route path="boards/:boardId" element={<Board />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
-        </Routes>
+            {/* Protected app routes */}
+            <Route element={<AppLayout />}>
+              <Route path="dashboard" element={<Home />} />
+              <Route path="boards" element={<Home />} />
+              <Route path="boards/:boardId" element={<Board />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+            {/* 404 catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
+      </ErrorBoundary>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

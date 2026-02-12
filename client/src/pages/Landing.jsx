@@ -1,670 +1,627 @@
-import { Box, Container, Typography, Button, Grid, Card, CardContent, Avatar, Chip, IconButton } from '@mui/material'
-import { motion } from 'framer-motion'
+import { Box, Container, Typography, Button, Grid } from '@mui/material'
 import { Link } from 'react-router-dom'
-import assets from '../assests/index'
-import SpeedIcon from '@mui/icons-material/Speed'
-import GroupsIcon from '@mui/icons-material/Groups'
-import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
-import SecurityIcon from '@mui/icons-material/Security'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { motion } from 'framer-motion'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import GitHubIcon from '@mui/icons-material/GitHub'
-import LinkedInIcon from '@mui/icons-material/LinkedIn'
-import TwitterIcon from '@mui/icons-material/Twitter'
-
-// Animation variants
-const fadeInUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-}
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 }
-  }
-}
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
-}
-
-const features = [
-  {
-    icon: ViewKanbanIcon,
-    title: 'Kanban Boards',
-    description: 'Visualize your workflow with intuitive drag-and-drop boards. Move tasks seamlessly between stages.'
-  },
-  {
-    icon: SpeedIcon,
-    title: 'Lightning Fast',
-    description: 'Built for speed. Real-time updates, instant syncing, and a responsive interface that keeps up with you.'
-  },
-  {
-    icon: GroupsIcon,
-    title: 'Team Collaboration',
-    description: 'Work together effortlessly. Share boards, assign tasks, and keep everyone aligned on goals.'
-  },
-  {
-    icon: SecurityIcon,
-    title: 'Secure & Private',
-    description: 'Your data is encrypted and protected. Enterprise-grade security for peace of mind.'
-  },
-  {
-    icon: AutoAwesomeIcon,
-    title: 'Beautiful Design',
-    description: 'A clean, modern interface that makes project management enjoyable, not just functional.'
-  },
-  {
-    icon: CheckCircleIcon,
-    title: 'Subtasks & Progress',
-    description: 'Break down complex tasks into subtasks. Track progress with visual indicators and completion rates.'
-  }
-]
-
-const testimonials = [
-  {
-    name: 'Sarah Chen',
-    role: 'Product Manager at TechCorp',
-    avatar: 'S',
-    quote: 'Kanvo transformed how our team manages sprints. The simplicity is its superpower.'
-  },
-  {
-    name: 'Marcus Johnson',
-    role: 'Startup Founder',
-    avatar: 'M',
-    quote: 'Finally, a project management tool that doesn\'t get in the way. Clean, fast, and just works.'
-  },
-  {
-    name: 'Emily Rodriguez',
-    role: 'Engineering Lead',
-    avatar: 'E',
-    quote: 'We switched from Jira and never looked back. Our team productivity increased by 40%.'
-  }
-]
+import NorthEastIcon from '@mui/icons-material/NorthEast'
+import assets from '../assests/index'
 
 const Landing = () => {
   return (
-    <Box sx={{ overflow: 'hidden' }}>
-      {/* Navigation */}
+    <Box sx={{ bgcolor: '#111113', color: '#fafafa', minHeight: '100vh' }}>
+
+      {/* ─── Top announcement strip ─── */}
+      <Box sx={{ bgcolor: '#fafafa', py: 0.75 }}>
+        <Container maxWidth="lg">
+          <Typography
+            component={Link}
+            to="/signup"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              color: '#111113',
+              textDecoration: 'none',
+              letterSpacing: '-0.01em'
+            }}
+          >
+            Kanvo is now in public beta — try it free
+            <NorthEastIcon sx={{ fontSize: 13 }} />
+          </Typography>
+        </Container>
+      </Box>
+
+      {/* ─── Nav ─── */}
       <Box
-        component={motion.nav}
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        component="nav"
         sx={{
-          position: 'fixed',
+          position: 'sticky',
           top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          backdropFilter: 'blur(10px)',
-          bgcolor: 'rgba(26, 26, 46, 0.8)',
-          borderBottom: '1px solid rgba(255,255,255,0.1)'
+          zIndex: 50,
+          bgcolor: 'rgba(17,17,19,0.85)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)'
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.75 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
                 component="img"
                 src={assets.images.logo}
-                alt="Kanvo Logo"
-                sx={{
-                  width: 40,
-                  height: 40,
-                  objectFit: 'contain'
-                }}
+                alt="Kanvo"
+                sx={{ width: 28, height: 28, objectFit: 'contain' }}
               />
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 700,
-                  background: 'linear-gradient(135deg, #0052CC 0%, #6554C0 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              >
+              <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.03em', color: '#fafafa' }}>
                 Kanvo
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Typography
                 component={Link}
                 to="/login"
-                sx={{ color: 'white', fontWeight: 500 }}
+                sx={{
+                  color: '#71717a',
+                  fontWeight: 500,
+                  fontSize: '0.85rem',
+                  textDecoration: 'none',
+                  '&:hover': { color: '#fafafa' },
+                  transition: 'color 0.2s'
+                }}
               >
-                Sign In
-              </Button>
+                Log in
+              </Typography>
               <Button
                 component={Link}
                 to="/signup"
                 variant="contained"
+                endIcon={<NorthEastIcon sx={{ fontSize: '14px !important' }} />}
                 sx={{
-                  background: 'linear-gradient(135deg, #0052CC 0%, #6554C0 100%)',
+                  bgcolor: '#fafafa',
+                  color: '#111113',
                   fontWeight: 600,
-                  px: 3,
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #0747A6 0%, #403294 100%)'
-                  }
+                  fontSize: '0.825rem',
+                  textTransform: 'none',
+                  px: 2.5,
+                  py: 0.75,
+                  borderRadius: '100px',
+                  boxShadow: 'none',
+                  '&:hover': { bgcolor: '#e4e4e7', boxShadow: 'none' }
                 }}
               >
-                Get Started
+                Get started
               </Button>
             </Box>
           </Box>
         </Container>
       </Box>
 
-      {/* Hero Section */}
+      {/* ─── Hero (full viewport, left-aligned) ─── */}
       <Box
         sx={{
-          minHeight: '100vh',
+          minHeight: 'calc(100vh - 100px)',
           display: 'flex',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
           position: 'relative',
-          overflow: 'hidden',
-          pt: 10
+          overflow: 'hidden'
         }}
       >
-        {/* Background decoration */}
+        {/* Background ambient glow */}
         <Box
           sx={{
             position: 'absolute',
-            width: '600px',
-            height: '600px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,82,204,0.15) 0%, transparent 70%)',
-            top: '-200px',
-            right: '-200px'
+            top: '5%',
+            left: '50%',
+            transform: 'translateX(-40%)',
+            width: '900px',
+            height: '700px',
+            background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.07) 0%, rgba(59,130,246,0.04) 35%, transparent 65%)',
+            pointerEvents: 'none'
           }}
         />
         <Box
           sx={{
             position: 'absolute',
-            width: '400px',
-            height: '400px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(101,84,192,0.15) 0%, transparent 70%)',
-            bottom: '-100px',
-            left: '-100px'
+            bottom: '10%',
+            left: '-10%',
+            width: '500px',
+            height: '500px',
+            background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 55%)',
+            pointerEvents: 'none'
+          }}
+        />
+        {/* Dot grid */}
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+            pointerEvents: 'none',
+            maskImage: 'radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 70%)'
           }}
         />
 
-        <Container maxWidth="lg">
-          <Grid container spacing={6} alignItems="center">
-            <Grid item xs={12} md={6}>
+        {/* Hero content */}
+        <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', alignItems: 'center', position: 'relative', zIndex: 2, pt: { xs: 8, md: 0 } }}>
+          <Grid container alignItems="center" spacing={4}>
+            <Grid item xs={12} md={8}>
               <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={staggerContainer}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <motion.div variants={fadeInUp}>
-                  <Chip
-                    label="Now in Beta"
-                    sx={{
-                      mb: 3,
-                      bgcolor: 'rgba(0,82,204,0.2)',
-                      color: '#4C9AFF',
-                      fontWeight: 600,
-                      fontSize: '0.85rem'
-                    }}
-                  />
-                </motion.div>
-
-                <motion.div variants={fadeInUp}>
-                  <Typography
-                    variant="h1"
-                    sx={{
-                      fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4rem' },
-                      fontWeight: 800,
-                      lineHeight: 1.1,
-                      mb: 3,
-                      color: 'white'
-                    }}
-                  >
-                    Project management,{' '}
-                    <Box
-                      component="span"
-                      sx={{
-                        background: 'linear-gradient(135deg, #4C9AFF 0%, #8777D9 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                      }}
-                    >
-                      simplified.
-                    </Box>
-                  </Typography>
-                </motion.div>
-
-                <motion.div variants={fadeInUp}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: 'rgba(255,255,255,0.7)',
-                      mb: 4,
-                      fontWeight: 400,
-                      lineHeight: 1.6,
-                      maxWidth: 500
-                    }}
-                  >
-                    Stop drowning in complexity. Kanvo gives you powerful project management
-                    with a clean interface that actually helps you get things done.
-                  </Typography>
-                </motion.div>
-
-                <motion.div variants={fadeInUp}>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Button
-                      component={Link}
-                      to="/signup"
-                      variant="contained"
-                      size="large"
-                      endIcon={<ArrowForwardIcon />}
-                      sx={{
-                        background: 'linear-gradient(135deg, #0052CC 0%, #6554C0 100%)',
-                        fontWeight: 600,
-                        px: 4,
-                        py: 1.5,
-                        fontSize: '1.1rem',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #0747A6 0%, #403294 100%)',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 10px 40px rgba(0,82,204,0.3)'
-                        },
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      Start for Free
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      sx={{
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        color: 'white',
-                        fontWeight: 500,
-                        px: 4,
-                        py: 1.5,
-                        '&:hover': {
-                          borderColor: 'white',
-                          bgcolor: 'rgba(255,255,255,0.05)'
-                        }
-                      }}
-                    >
-                      Watch Demo
-                    </Button>
-                  </Box>
-                </motion.div>
-
-                <motion.div variants={fadeInUp}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mt: 5 }}>
-                    <Box sx={{ display: 'flex' }}>
-                      {['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'].map((color, i) => (
-                        <Avatar
-                          key={i}
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            bgcolor: color,
-                            border: '2px solid #1a1a2e',
-                            ml: i > 0 ? -1.5 : 0,
-                            fontSize: '0.875rem',
-                            fontWeight: 600
-                          }}
-                        >
-                          {String.fromCharCode(65 + i)}
-                        </Avatar>
-                      ))}
-                    </Box>
-                    <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-                      <strong style={{ color: 'white' }}>2,000+</strong> teams already onboard
-                    </Typography>
-                  </Box>
-                </motion.div>
-              </motion.div>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-              >
-                <Box
+                <Typography
+                  variant="h1"
                   sx={{
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      inset: -20,
-                      background: 'linear-gradient(135deg, rgba(0,82,204,0.2), rgba(101,84,192,0.2))',
-                      borderRadius: 4,
-                      filter: 'blur(40px)'
-                    }
+                    fontSize: { xs: '3rem', sm: '4.5rem', md: '5.5rem', lg: '6.5rem' },
+                    fontWeight: 600,
+                    lineHeight: 1.0,
+                    letterSpacing: '-0.045em',
+                    color: '#fafafa',
+                    mb: { xs: 3, md: 4 }
                   }}
                 >
+                  Ship projects,
+                  <br />
                   <Box
-                    component="img"
-                    src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=800&auto=format&fit=crop&q=80"
-                    alt="Kanban Board Preview"
+                    component="span"
+                    sx={{ color: '#52525b' }}
+                  >
+                    not spreadsheets.
+                  </Box>
+                </Typography>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: { xs: '1rem', md: '1.15rem' },
+                    lineHeight: 1.7,
+                    color: '#71717a',
+                    maxWidth: 480,
+                    mb: 4
+                  }}
+                >
+                  The Kanban tool that gets out of your way.
+                  Drag-and-drop boards, task tracking, and analytics — nothing more.
+                </Typography>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+              >
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Button
+                    component={Link}
+                    to="/signup"
+                    variant="contained"
+                    size="large"
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: '18px !important' }} />}
                     sx={{
-                      width: '100%',
-                      borderRadius: 3,
-                      boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                      position: 'relative',
-                      border: '1px solid rgba(255,255,255,0.1)'
+                      bgcolor: '#fafafa',
+                      color: '#111113',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      textTransform: 'none',
+                      px: 3.5,
+                      py: 1.25,
+                      borderRadius: '100px',
+                      boxShadow: 'none',
+                      '&:hover': { bgcolor: '#e4e4e7', boxShadow: 'none' }
                     }}
-                  />
+                  >
+                    Start for free
+                  </Button>
+                  <Typography sx={{ fontSize: '0.8rem', color: '#3f3f46' }}>
+                    No credit card required
+                  </Typography>
                 </Box>
               </motion.div>
             </Grid>
           </Grid>
         </Container>
+
+        {/* Bottom bar — pinned to bottom of hero */}
+        <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative', zIndex: 2 }}>
+          <Container maxWidth="lg">
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                py: 3,
+                flexWrap: 'wrap',
+                gap: 2
+              }}
+            >
+              <Typography sx={{ fontSize: '0.85rem', color: '#52525b', maxWidth: 400, lineHeight: 1.5 }}>
+                A focused project management tool for makers, founders, and small teams who value simplicity.
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: '#3f3f46',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  fontWeight: 600
+                }}
+              >
+                Built for builders. Free forever.
+              </Typography>
+            </Box>
+          </Container>
+        </Box>
       </Box>
 
-      {/* Features Section */}
-      <Box
-        sx={{
-          py: 15,
-          background: 'linear-gradient(180deg, #0f3460 0%, #1a1a2e 100%)'
-        }}
-      >
+      {/* ─── Problem ─── */}
+      <Box sx={{ py: { xs: 10, md: 16 }, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <Container maxWidth="lg">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-100px' }}
-            variants={staggerContainer}
-          >
-            <Box sx={{ textAlign: 'center', mb: 8 }}>
-              <motion.div variants={fadeInUp}>
-                <Typography
-                  variant="h2"
-                  sx={{
-                    fontSize: { xs: '2rem', md: '2.75rem' },
-                    fontWeight: 700,
-                    color: 'white',
-                    mb: 2
-                  }}
-                >
-                  Everything you need to ship faster
-                </Typography>
-              </motion.div>
-              <motion.div variants={fadeInUp}>
-                <Typography
-                  sx={{
-                    color: 'rgba(255,255,255,0.6)',
-                    fontSize: '1.1rem',
-                    maxWidth: 600,
-                    mx: 'auto'
-                  }}
-                >
-                  Powerful features wrapped in a simple interface. No learning curve, just results.
-                </Typography>
-              </motion.div>
-            </Box>
-
-            <Grid container spacing={4}>
-              {features.map((feature, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                  <motion.div variants={scaleIn}>
-                    <Card
-                      sx={{
-                        height: '100%',
-                        bgcolor: 'rgba(255,255,255,0.03)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          borderColor: 'rgba(0,82,204,0.5)',
-                          boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-                        }
-                      }}
-                    >
-                      <CardContent sx={{ p: 4 }}>
-                        <Box
-                          sx={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 2,
-                            background: 'linear-gradient(135deg, rgba(0,82,204,0.2) 0%, rgba(101,84,192,0.2) 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            mb: 3
-                          }}
-                        >
-                          <feature.icon sx={{ fontSize: 28, color: '#4C9AFF' }} />
-                        </Box>
-                        <Typography
-                          variant="h6"
-                          sx={{ fontWeight: 600, color: 'white', mb: 1.5 }}
-                        >
-                          {feature.title}
-                        </Typography>
-                        <Typography sx={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
-                          {feature.description}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))}
+          <Grid container spacing={6} alignItems="flex-start">
+            <Grid item xs={12} md={4}>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: '#3f3f46',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  fontWeight: 600,
+                  position: 'sticky',
+                  top: 100
+                }}
+              >
+                The problem
+              </Typography>
             </Grid>
-          </motion.div>
+            <Grid item xs={12} md={8}>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontSize: { xs: '1.75rem', md: '2.5rem' },
+                  fontWeight: 600,
+                  lineHeight: 1.25,
+                  letterSpacing: '-0.035em',
+                  color: '#fafafa',
+                  mb: 3
+                }}
+              >
+                Project management tools are bloated. You don't need 200 features, 14 views, and a week-long setup.
+              </Typography>
+              <Typography sx={{ fontSize: '1.05rem', lineHeight: 1.8, color: '#52525b', maxWidth: 600 }}>
+                Jira is built for enterprises with dedicated admins. Asana wants you to learn their system.
+                Monday.com needs a manual. Your team just needs a board, cards, and a way to move things forward.
+              </Typography>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
-      {/* Testimonials Section */}
-      <Box sx={{ py: 15, bgcolor: '#1a1a2e' }}>
+      {/* ─── How it works ─── */}
+      <Box sx={{ py: { xs: 10, md: 16 }, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <Container maxWidth="lg">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-100px' }}
-            variants={staggerContainer}
-          >
-            <Box sx={{ textAlign: 'center', mb: 8 }}>
-              <motion.div variants={fadeInUp}>
-                <Typography
-                  variant="h2"
+          <Grid container spacing={6} alignItems="flex-start" sx={{ mb: { xs: 6, md: 10 } }}>
+            <Grid item xs={12} md={4}>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: '#3f3f46',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  fontWeight: 600
+                }}
+              >
+                How it works
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontSize: { xs: '1.75rem', md: '2.5rem' },
+                  fontWeight: 600,
+                  letterSpacing: '-0.035em',
+                  color: '#fafafa'
+                }}
+              >
+                Three steps. That's it.
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={0}>
+            {[
+              {
+                num: '01',
+                title: 'Create a board',
+                desc: 'Name your project and you\'re live in seconds. No configuration wizards, no mandatory fields.'
+              },
+              {
+                num: '02',
+                title: 'Add sections & tasks',
+                desc: 'Create columns for your workflow. Add tasks with priorities, due dates, subtasks, and tags.'
+              },
+              {
+                num: '03',
+                title: 'Drag, drop, ship',
+                desc: 'Move tasks between columns as work progresses. See completion stats in real time.'
+              }
+            ].map((item, index) => (
+              <Grid item xs={12} md={4} key={index}>
+                <Box
                   sx={{
-                    fontSize: { xs: '2rem', md: '2.75rem' },
-                    fontWeight: 700,
-                    color: 'white',
-                    mb: 2
+                    py: { xs: 4, md: 5 },
+                    pr: { md: 5 },
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                    height: '100%'
                   }}
                 >
-                  Loved by teams everywhere
-                </Typography>
-              </motion.div>
-            </Box>
-
-            <Grid container spacing={4}>
-              {testimonials.map((testimonial, index) => (
-                <Grid item xs={12} md={4} key={index}>
-                  <motion.div variants={fadeInUp}>
-                    <Card
-                      sx={{
-                        height: '100%',
-                        bgcolor: 'rgba(255,255,255,0.03)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        p: 1
-                      }}
-                    >
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography
-                          sx={{
-                            color: 'rgba(255,255,255,0.85)',
-                            fontSize: '1.1rem',
-                            lineHeight: 1.7,
-                            mb: 3,
-                            fontStyle: 'italic'
-                          }}
-                        >
-                          "{testimonial.quote}"
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar
-                            sx={{
-                              background: 'linear-gradient(135deg, #0052CC 0%, #6554C0 100%)',
-                              fontWeight: 600
-                            }}
-                          >
-                            {testimonial.avatar}
-                          </Avatar>
-                          <Box>
-                            <Typography sx={{ color: 'white', fontWeight: 600 }}>
-                              {testimonial.name}
-                            </Typography>
-                            <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
-                              {testimonial.role}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
-          </motion.div>
+                  <Typography sx={{ fontSize: '3rem', fontWeight: 700, color: '#1e1e22', letterSpacing: '-0.03em', lineHeight: 1, mb: 3 }}>
+                    {item.num}
+                  </Typography>
+                  <Typography sx={{ fontSize: '1.1rem', fontWeight: 600, color: '#fafafa', mb: 1.5, letterSpacing: '-0.01em' }}>
+                    {item.title}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.9rem', lineHeight: 1.7, color: '#52525b' }}>
+                    {item.desc}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
         </Container>
       </Box>
 
-      {/* CTA Section */}
-      <Box
-        sx={{
-          py: 15,
-          background: 'linear-gradient(135deg, #0052CC 0%, #6554C0 100%)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
+      {/* ─── Features ─── */}
+      <Box sx={{ py: { xs: 10, md: 16 }, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={6} alignItems="flex-start" sx={{ mb: { xs: 6, md: 10 } }}>
+            <Grid item xs={12} md={4}>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: '#3f3f46',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  fontWeight: 600
+                }}
+              >
+                Capabilities
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontSize: { xs: '1.75rem', md: '2.5rem' },
+                  fontWeight: 600,
+                  letterSpacing: '-0.035em',
+                  color: '#fafafa',
+                  mb: 2
+                }}
+              >
+                Everything you need.
+                <Box component="span" sx={{ color: '#3f3f46' }}> Nothing you don't.</Box>
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={0}>
+            {[
+              { title: 'Drag-and-drop Kanban', desc: 'Intuitive boards that work the way you think.' },
+              { title: 'Task priorities', desc: 'High, medium, low. Color-coded and filterable.' },
+              { title: 'Due dates & tracking', desc: 'See overdue tasks at a glance. Never miss a deadline.' },
+              { title: 'Subtasks', desc: 'Break work into steps. Track completion per task.' },
+              { title: 'Search & filters', desc: 'Find any task instantly by status, priority, or text.' },
+              { title: 'Rich text editor', desc: 'Full editor for task details. Format what matters.' },
+              { title: 'Real-time analytics', desc: 'Completion rates, status breakdown, activity tracking.' },
+              { title: 'Dark & light mode', desc: 'Comfortable in any lighting. Switch in one click.' }
+            ].map((feature, index) => (
+              <Grid item xs={12} sm={6} md={3} key={index}>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    borderRight: { md: (index + 1) % 4 !== 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' },
+                    height: '100%'
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#fafafa', mb: 0.75, letterSpacing: '-0.01em' }}>
+                    {feature.title}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.825rem', color: '#52525b', lineHeight: 1.6 }}>
+                    {feature.desc}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* ─── Testimonials ─── */}
+      <Box sx={{ py: { xs: 10, md: 16 }, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={6} alignItems="flex-start" sx={{ mb: { xs: 6, md: 10 } }}>
+            <Grid item xs={12} md={4}>
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: '#3f3f46',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  fontWeight: 600
+                }}
+              >
+                Testimonials
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontSize: { xs: '1.75rem', md: '2.5rem' },
+                  fontWeight: 600,
+                  letterSpacing: '-0.035em',
+                  color: '#fafafa'
+                }}
+              >
+                Teams that switched aren't going back.
+              </Typography>
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={0}>
+            {[
+              {
+                quote: 'We replaced a $4,000/year Jira license with Kanvo. Our team actually uses it now — that\'s the difference.',
+                name: 'Sarah Chen',
+                role: 'Product Lead'
+              },
+              {
+                quote: 'I set up our entire project workflow in 10 minutes. Tried doing that with Monday.com once. Gave up after an hour.',
+                name: 'Marcus Johnson',
+                role: 'Founder'
+              },
+              {
+                quote: 'The analytics dashboard alone is worth it. I can finally see where work gets stuck without asking anyone.',
+                name: 'Emily Rodriguez',
+                role: 'Engineering Manager'
+              }
+            ].map((item, index) => (
+              <Grid item xs={12} md={4} key={index}>
+                <Box
+                  sx={{
+                    p: { xs: 3, md: 4 },
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                    borderRight: { md: index < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none' },
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <Typography sx={{ fontSize: '0.95rem', lineHeight: 1.7, color: '#a1a1aa', mb: 4 }}>
+                    "{item.quote}"
+                  </Typography>
+                  <Box>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#fafafa' }}>
+                      {item.name}
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.75rem', color: '#3f3f46' }}>
+                      {item.role}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* ─── CTA ─── */}
+      <Box sx={{ py: { xs: 12, md: 20 }, borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden' }}>
+        {/* CTA ambient glow */}
         <Box
           sx={{
             position: 'absolute',
-            width: '400px',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%,-50%)',
+            width: '700px',
             height: '400px',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            top: '-200px',
-            left: '-100px'
+            background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.06) 0%, transparent 60%)',
+            pointerEvents: 'none'
           }}
         />
-        <Box
-          sx={{
-            position: 'absolute',
-            width: '300px',
-            height: '300px',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-            bottom: '-150px',
-            right: '-50px'
-          }}
-        />
-
-        <Container maxWidth="md">
+        <Container maxWidth="md" sx={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Box sx={{ textAlign: 'center', position: 'relative' }}>
-              <Typography
-                variant="h2"
-                sx={{
-                  fontSize: { xs: '2rem', md: '3rem' },
-                  fontWeight: 700,
-                  color: 'white',
-                  mb: 2
-                }}
-              >
-                Ready to transform your workflow?
-              </Typography>
-              <Typography
-                sx={{
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: '1.2rem',
-                  mb: 4,
-                  maxWidth: 500,
-                  mx: 'auto'
-                }}
-              >
-                Join thousands of teams using Kanvo to ship products faster.
-              </Typography>
-              <Button
-                component={Link}
-                to="/signup"
-                variant="contained"
-                size="large"
-                sx={{
-                  bgcolor: 'white',
-                  color: '#0052CC',
-                  fontWeight: 700,
-                  px: 5,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.9)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Get Started - It's Free
-              </Button>
-            </Box>
+            <Typography
+              variant="h2"
+              sx={{
+                fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+                fontWeight: 600,
+                lineHeight: 1.05,
+                letterSpacing: '-0.04em',
+                color: '#fafafa',
+                mb: 3
+              }}
+            >
+              Ready to build?
+            </Typography>
+            <Typography sx={{ fontSize: '1.05rem', color: '#52525b', mb: 5, lineHeight: 1.6 }}>
+              Free to use. Set up in under a minute.
+            </Typography>
+            <Button
+              component={Link}
+              to="/signup"
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon sx={{ fontSize: '18px !important' }} />}
+              sx={{
+                bgcolor: '#fafafa',
+                color: '#111113',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                textTransform: 'none',
+                px: 4,
+                py: 1.5,
+                borderRadius: '100px',
+                boxShadow: 'none',
+                '&:hover': { bgcolor: '#e4e4e7', boxShadow: 'none' }
+              }}
+            >
+              Get started for free
+            </Button>
           </motion.div>
         </Container>
       </Box>
 
-      {/* Footer */}
-      <Box sx={{ py: 6, bgcolor: '#0f0f1a', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* ─── Footer ─── */}
+      <Box sx={{ borderTop: '1px solid rgba(255,255,255,0.06)', py: 4 }}>
         <Container maxWidth="lg">
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 3
-            }}
-          >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
                 component="img"
                 src={assets.images.logo}
-                alt="Kanvo Logo"
-                sx={{
-                  width: 32,
-                  height: 32,
-                  objectFit: 'contain'
-                }}
+                alt="Kanvo"
+                sx={{ width: 20, height: 20, objectFit: 'contain', opacity: 0.4 }}
               />
-              <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>
-                2025 Kanvo. Built with passion.
+              <Typography sx={{ fontSize: '0.75rem', color: '#27272a' }}>
+                2025 Kanvo. All rights reserved.
               </Typography>
             </Box>
-
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}>
-                <GitHubIcon />
-              </IconButton>
-              <IconButton sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}>
-                <TwitterIcon />
-              </IconButton>
-              <IconButton sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}>
-                <LinkedInIcon />
-              </IconButton>
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              {['GitHub', 'Twitter'].map((link) => (
+                <Typography
+                  key={link}
+                  component="a"
+                  href="#"
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: '#3f3f46',
+                    textDecoration: 'none',
+                    '&:hover': { color: '#a1a1aa' },
+                    transition: 'color 0.2s'
+                  }}
+                >
+                  {link}
+                </Typography>
+              ))}
             </Box>
           </Box>
         </Container>

@@ -36,8 +36,6 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email }).select('password username email');
    
 
-        console.log(user)
-
         if (!user) {
             return res.status(401).json({
                 errors: [{ param: 'email', msg: 'Looks like you have not signed up' }],
@@ -61,14 +59,13 @@ exports.login = async (req, res) => {
 
         res.status(200).json({ user: { username: user.username, email: user.email }, token });
     } catch (err) {
-        console.error('Error during login:', err);
         res.status(500).json(err);
     }
 };
 
 exports.getProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(req.user._id).lean();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -79,7 +76,6 @@ exports.getProfile = async (req, res) => {
             createdAt: user.createdAt
         });
     } catch (err) {
-        console.error('Error getting profile:', err);
         res.status(500).json({ message: 'Error getting profile' });
     }
 };
@@ -112,7 +108,6 @@ exports.updateProfile = async (req, res) => {
             email: user.email
         });
     } catch (err) {
-        console.error('Error updating profile:', err);
         res.status(500).json({ message: 'Error updating profile' });
     }
 };
@@ -120,115 +115,137 @@ exports.updateProfile = async (req, res) => {
 exports.getAnalytics = async (req, res) => {
     try {
         const userId = req.user._id;
-
-        // Get all boards for this user
-        const boards = await Board.find({ user: userId });
-        const boardIds = boards.map(b => b._id);
-
-        // Get all sections for these boards
-        const sections = await Section.find({ board: { $in: boardIds } });
-        const sectionIds = sections.map(s => s._id);
-
-        // Get all tasks for these sections
-        const tasks = await Task.find({ section: { $in: sectionIds } });
-
-        // Calculate analytics
-        const totalBoards = boards.length;
-        const totalSections = sections.length;
-        const totalTasks = tasks.length;
-        const favouriteBoards = boards.filter(b => b.favourite).length;
-
-        // Task status breakdown
-        const tasksByStatus = {
-            todo: tasks.filter(t => t.status === 'todo').length,
-            inProgress: tasks.filter(t => t.status === 'in-progress').length,
-            completed: tasks.filter(t => t.status === 'completed').length
-        };
-
-        // Task priority breakdown
-        const tasksByPriority = {
-            low: tasks.filter(t => t.priority === 'low').length,
-            medium: tasks.filter(t => t.priority === 'medium').length,
-            high: tasks.filter(t => t.priority === 'high').length
-        };
-
-        // Overdue tasks (due date in the past and not completed)
         const now = new Date();
-        const overdueTasks = tasks.filter(t =>
-            t.dueDate &&
-            new Date(t.dueDate) < now &&
-            t.status !== 'completed'
-        ).length;
-
-        // Tasks due soon (within next 7 days)
         const nextWeek = new Date();
         nextWeek.setDate(nextWeek.getDate() + 7);
-        const dueSoonTasks = tasks.filter(t =>
-            t.dueDate &&
-            new Date(t.dueDate) >= now &&
-            new Date(t.dueDate) <= nextWeek &&
-            t.status !== 'completed'
-        ).length;
-
-        // Completion rate
-        const completionRate = totalTasks > 0
-            ? Math.round((tasksByStatus.completed / totalTasks) * 100)
-            : 0;
-
-        // Subtask stats
-        const totalSubtasks = tasks.reduce((acc, t) => acc + (t.subtasks?.length || 0), 0);
-        const completedSubtasks = tasks.reduce((acc, t) =>
-            acc + (t.subtasks?.filter(s => s.completed).length || 0), 0
-        );
-
-        // Recent activity - tasks created/updated in last 7 days
         const lastWeek = new Date();
         lastWeek.setDate(lastWeek.getDate() - 7);
-        const recentTasks = tasks.filter(t =>
-            new Date(t.updatedAt) >= lastWeek
-        ).length;
 
-        // Board with most tasks
-        const boardTaskCounts = {};
-        for (const section of sections) {
-            const boardId = section.board.toString();
-            const sectionTasks = tasks.filter(t => t.section.toString() === section._id.toString()).length;
-            boardTaskCounts[boardId] = (boardTaskCounts[boardId] || 0) + sectionTasks;
-        }
+        // Get board-level stats in a single query
+        const boards = await Board.find({ user: userId }).lean();
+        const boardIds = boards.map(b => b._id);
+        const totalBoards = boards.length;
+        const favouriteBoards = boards.filter(b => b.favourite).length;
+
+        // Get section IDs in one query
+        const sections = await Section.find({ board: { $in: boardIds } }).select('_id board').lean();
+        const sectionIds = sections.map(s => s._id);
+        const totalSections = sections.length;
+
+        // Use aggregation pipeline for all task stats in a single DB round-trip
+        const [taskStats] = await Task.aggregate([
+            { $match: { section: { $in: sectionIds } } },
+            {
+                $group: {
+                    _id: null,
+                    totalTasks: { $sum: 1 },
+                    todo: { $sum: { $cond: [{ $eq: ['$status', 'todo'] }, 1, 0] } },
+                    inProgress: { $sum: { $cond: [{ $eq: ['$status', 'in-progress'] }, 1, 0] } },
+                    completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+                    low: { $sum: { $cond: [{ $eq: ['$priority', 'low'] }, 1, 0] } },
+                    medium: { $sum: { $cond: [{ $eq: ['$priority', 'medium'] }, 1, 0] } },
+                    high: { $sum: { $cond: [{ $eq: ['$priority', 'high'] }, 1, 0] } },
+                    overdue: {
+                        $sum: {
+                            $cond: [
+                                { $and: [
+                                    { $ne: ['$dueDate', null] },
+                                    { $lt: ['$dueDate', now] },
+                                    { $ne: ['$status', 'completed'] }
+                                ]},
+                                1, 0
+                            ]
+                        }
+                    },
+                    dueSoon: {
+                        $sum: {
+                            $cond: [
+                                { $and: [
+                                    { $ne: ['$dueDate', null] },
+                                    { $gte: ['$dueDate', now] },
+                                    { $lte: ['$dueDate', nextWeek] },
+                                    { $ne: ['$status', 'completed'] }
+                                ]},
+                                1, 0
+                            ]
+                        }
+                    },
+                    recentlyActive: {
+                        $sum: { $cond: [{ $gte: ['$updatedAt', lastWeek] }, 1, 0] }
+                    },
+                    totalSubtasks: { $sum: { $size: { $ifNull: ['$subtasks', []] } } },
+                    completedSubtasks: {
+                        $sum: {
+                            $size: {
+                                $filter: {
+                                    input: { $ifNull: ['$subtasks', []] },
+                                    as: 'st',
+                                    cond: { $eq: ['$$st.completed', true] }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const stats = taskStats || {
+            totalTasks: 0, todo: 0, inProgress: 0, completed: 0,
+            low: 0, medium: 0, high: 0, overdue: 0, dueSoon: 0,
+            recentlyActive: 0, totalSubtasks: 0, completedSubtasks: 0
+        };
+
+        // Most active board via aggregation
+        const boardTaskCounts = await Task.aggregate([
+            { $match: { section: { $in: sectionIds } } },
+            {
+                $lookup: {
+                    from: 'sections',
+                    localField: 'section',
+                    foreignField: '_id',
+                    as: 'sec'
+                }
+            },
+            { $unwind: '$sec' },
+            { $group: { _id: '$sec.board', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 1 }
+        ]);
 
         let mostActiveBoard = null;
-        let maxTasks = 0;
-        for (const board of boards) {
-            const count = boardTaskCounts[board._id.toString()] || 0;
-            if (count > maxTasks) {
-                maxTasks = count;
-                mostActiveBoard = { title: board.title, icon: board.icon, taskCount: count };
+        if (boardTaskCounts.length > 0) {
+            const topBoard = boards.find(b => b._id.toString() === boardTaskCounts[0]._id.toString());
+            if (topBoard) {
+                mostActiveBoard = { title: topBoard.title, icon: topBoard.icon, taskCount: boardTaskCounts[0].count };
             }
         }
+
+        const completionRate = stats.totalTasks > 0
+            ? Math.round((stats.completed / stats.totalTasks) * 100)
+            : 0;
 
         res.status(200).json({
             overview: {
                 totalBoards,
                 totalSections,
-                totalTasks,
+                totalTasks: stats.totalTasks,
                 favouriteBoards,
                 completionRate
             },
             tasks: {
-                byStatus: tasksByStatus,
-                byPriority: tasksByPriority,
-                overdue: overdueTasks,
-                dueSoon: dueSoonTasks,
-                recentlyActive: recentTasks
+                byStatus: { todo: stats.todo, inProgress: stats.inProgress, completed: stats.completed },
+                byPriority: { low: stats.low, medium: stats.medium, high: stats.high },
+                overdue: stats.overdue,
+                dueSoon: stats.dueSoon,
+                recentlyActive: stats.recentlyActive
             },
             subtasks: {
-                total: totalSubtasks,
-                completed: completedSubtasks
+                total: stats.totalSubtasks,
+                completed: stats.completedSubtasks
             },
             mostActiveBoard
         });
     } catch (err) {
-        console.error('Error getting analytics:', err);
         res.status(500).json({ message: 'Error getting analytics' });
     }
 };
